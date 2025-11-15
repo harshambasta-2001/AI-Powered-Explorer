@@ -54,3 +54,7 @@ alembic upgrade head
 uvicorn main:app --reload
 ```
 
+5. Test your application
+```
+pytest
+```
