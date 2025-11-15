@@ -115,9 +115,13 @@ async def get_tasks(
     try:
         with DBFactory() as db:
             tasks = Task.get_tasks_by_user(db, user_id=current_user.id, task_type=type)
-            for each in tasks:
-                del each.user_id
-                del each.type
+            if type is None:
+                for each in tasks:
+                    del each.user_id
+            else:
+                for each in tasks:
+                    del each.user_id   
+                    del each.type
             return tasks
 
     except HTTPException as error:

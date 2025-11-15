@@ -37,25 +37,26 @@ async def create_user(request: Request,user: UserCreate):
 
 
 
-@router.get('/login/', response_model=Token, status_code=status.HTTP_200_OK)
-async def login(request: Request,email:str,password:str):
+@router.post('/login/', response_model=Token, status_code=status.HTTP_200_OK)
+async def login(request: Request,user_credentials: UserLogin):
     try:
         with DBFactory() as db:
             user = db.query(User).filter(
-                User.email == email).first()
+                User.email == user_credentials.email).first()
 
             if not user:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid Credentials")
 
-            if not verify(password, user.password_hash):
+            if not verify(user_credentials.password, user.password_hash):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid Credentials")
 
 
             access_token = create_access_token(data={"user_id": user.id,"role":user.role,"name":user.username,"email_id":user.email})
+            refresh_token = create_refresh_token(data={"user_id": user.id})
 
-            return {"access_token": access_token, "token_type": "bearer"}
+            return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
     except HTTPException as error:
         raise error
 
@@ -63,6 +64,19 @@ async def login(request: Request,email:str,password:str):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)
         ) from error
+
+
+@router.post("/refresh/", response_model=Token, status_code=status.HTTP_200_OK)
+async def refresh_token(request: Request):
+    try:
+        refresh_token = request.headers.get("Authorization")
+        if not refresh_token:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token not found")
+        
+        new_access_token = refresh_access_token(refresh_token.split(" ")[1])
+        return {"access_token": new_access_token, "refresh_token": refresh_token.split(" ")[1], "token_type": "bearer"}
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))
 
 
 @router.get("/users/",status_code=status.HTTP_200_OK)

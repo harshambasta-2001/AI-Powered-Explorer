@@ -38,7 +38,10 @@ class Task(Base):
 
     @classmethod
     def get_tasks_by_user(cls, db: Session, user_id: str, task_type: ContentType = None):
-        tasks = db.query(cls).filter(and_(cls.user_id == user_id,cls.type == task_type)).all()
+        if task_type is None:
+            tasks = db.query(cls).filter(cls.user_id == user_id).all()
+        else:
+            tasks = db.query(cls).filter(and_(cls.user_id == user_id,cls.type == task_type)).all()
         return tasks
 
     @classmethod
