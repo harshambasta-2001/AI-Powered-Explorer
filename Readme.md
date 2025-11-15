@@ -54,6 +54,11 @@ alembic upgrade head
 uvicorn main:app --reload
 ```
 
+Api Document
+```
+http://127.0.0.1:8000/docs#/
+```
+
 5. Test your application
 ```
 pytest
